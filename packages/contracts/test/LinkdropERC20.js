@@ -3,9 +3,8 @@
 import chai from 'chai'
 
 import {
-  createMockProvider,
+  MockProvider,
   deployContract,
-  getWallets,
   solidity
 } from 'ethereum-waffle'
 
@@ -28,9 +27,9 @@ ethers.errors.setLogLevel('error')
 chai.use(solidity)
 const { expect } = chai
 
-let provider = createMockProvider()
+let provider = new MockProvider()
 
-let [linkdropMaster, receiver, nonsender, linkdropSigner, relayer] = getWallets(
+let [linkdropMaster, receiver, nonsender, linkdropSigner, relayer] = provider.getWallets(
   provider
 )
 
