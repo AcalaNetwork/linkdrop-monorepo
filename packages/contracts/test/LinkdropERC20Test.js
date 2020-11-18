@@ -87,51 +87,63 @@ describe('ETH/ERC20 linkdrop tests', () => {
       linkdropMaster
     )
 
-    let linkdropMasterAddress = await proxy.linkdropMaster()
-    console.log('linkdropMasterAddress:', linkdropMasterAddress)
-
+    tokenAmount = 100
     weiAmount = 0
     tokenAddress = tokenInstance.address
     tokenAmount = 100
     expirationTime = 11234234223
     version = 1
-    link = await createLink(
-      linkdropSigner,
-      weiAmount,
-      tokenAddress,
-      tokenAmount,
-      expirationTime,
-      version,
-      chainId,
-      proxyAddress
-    )
 
-    link = await createLink(
-      linkdropSigner,
-      weiAmount,
-      tokenAddress,
-      tokenAmount,
-      expirationTime,
-      version,
-      chainId,
-      proxyAddress
-    )
+    await linkdropMaster.sendTransaction({
+      to: proxy.address,
+      value: ethers.utils.parseEther('2')
+    })
 
     await proxy.addSigner(linkdropSigner.address, { gasLimit: 500000 })
-    const isSigner = await proxy.isLinkdropSigner(linkdropSigner.address)
 
-    console.log('isSigner:', isSigner)
+    await factory.addRelayer(relayer.address)
 
+    factory = factory.connect(relayer)
 
-    const result = await proxy.verifyLinkdropSignerSignature(
+    await tokenInstance.approve(proxy.address, tokenAmount)
+
+    link = await createLink(
+      linkdropSigner,
+      weiAmount,
+      tokenAddress,
+      tokenAmount,
+      expirationTime,
+      version,
+      chainId,
+      proxyAddress
+    )
+
+    receiverAddress = ethers.Wallet.createRandom().address
+    receiverSignature = await signReceiverAddress(link.linkKey, receiverAddress)
+
+    let approverBalanceBefore = await tokenInstance.balanceOf(
+      linkdropMaster.address
+    )
+
+    console.log('approverBalanceBefore:', approverBalanceBefore)
+
+    await factory.claim(
       weiAmount,
       tokenAddress,
       tokenAmount,
       expirationTime,
       link.linkId,
-      link.linkdropSignerSignature
+      linkdropMaster.address,
+      campaignId,
+      link.linkdropSignerSignature,
+      receiverAddress,
+      receiverSignature,
+      { gasLimit: 800000 }
     )
 
-    console.log('verifyLinkdropSignerSignature: ', result)
+    let approverBalanceAfter = await tokenInstance.balanceOf(
+      linkdropMaster.address
+    )
+    console.log('approverBalanceAfter:', approverBalanceAfter)
   })
 })
